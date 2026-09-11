@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidQuestion(data) {
+      return data.keys().hasAll(['questionNumber', 'question', 'choices', 'correctIndex', 'explanation']) &&
+        data.keys().size() == 5 &&
+        data.questionNumber is number &&
+        data.question is string && data.question.size() > 0 && data.question.size() <= 1000 &&
+        data.choices is list && data.choices.size() >= 2 && data.choices.size() <= 5 &&
+        data.correctIndex is number && data.correctIndex >= 0 && data.correctIndex < data.choices.size() &&
+        data.explanation is string && data.explanation.size() <= 2000;
+    }
+
+    function isValidLearningRecord(data) {
+      return data.keys().hasAll(['ownerId', 'activityId', 'question', 'studentAnswer', 'feedbackDraft', 'guidelineVersion', 'createdAt']) &&
+        data.keys().size() == 7 &&
+        data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128 &&
+        data.activityId is string && data.activityId.size() > 0 && data.activityId.size() <= 64 &&
+        data.question is string && data.question.size() > 0 && data.question.size() <= 1000 &&
+        data.studentAnswer is string && data.studentAnswer.size() > 0 && data.studentAnswer.size() <= 2000 &&
+        data.guidelineVersion is string && data.guidelineVersion.size() > 0 && data.guidelineVersion.size() <= 32 &&
+        data.createdAt is timestamp &&
+        data.feedbackDraft is map &&
+        data.feedbackDraft.keys().hasAll(['wellUnderstood', 'pointsToThink', 'followUpQuestion']) &&
+        data.feedbackDraft.keys().size() == 3 &&
+        data.feedbackDraft.wellUnderstood is string && data.feedbackDraft.wellUnderstood.size() <= 2000 &&
+        data.feedbackDraft.pointsToThink is string && data.feedbackDraft.pointsToThink.size() <= 2000 &&
+        data.feedbackDraft.followUpQuestion is string && data.feedbackDraft.followUpQuestion.size() <= 2000;
+    }
+
+    // Default catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Quiz questions collection
+    match /questions/{questionId} {
+      allow get: if isValidId(questionId);
+      allow list: if true;
+      allow create: if isValidId(questionId) && isValidQuestion(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // 2. Learning records collection
+    match /learningRecords/{recordId} {
+      allow get: if isSignedIn() && isValidId(recordId) && resource.data.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(recordId) &&
+        isValidLearningRecord(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if isSignedIn() &&
+        isValidId(recordId) &&
+        existing().ownerId == request.auth.uid &&
+        isValidLearningRecord(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        (incoming().createdAt == existing().createdAt || incoming().createdAt == request.time);
+      allow delete: if isSignedIn() && isValidId(recordId) && resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

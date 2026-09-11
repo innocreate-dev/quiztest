@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "QuizQuestion": {
+      "title": "QuizQuestion",
+      "description": "Elementary school AI education quiz question with choices, correct index, and explanation",
+      "type": "object",
+      "properties": {
+        "questionNumber": {
+          "type": "number",
+          "description": "1-based order number of the question"
+        },
+        "question": {
+          "type": "string",
+          "description": "Question text"
+        },
+        "choices": {
+          "type": "array",
+          "description": "List of answer choices",
+          "items": {
+            "type": "string"
+          }
+        },
+        "correctIndex": {
+          "type": "number",
+          "description": "0-based index of the correct choice"
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Educational explanation for the correct answer"
+        }
+      },
+      "required": [
+        "questionNumber",
+        "question",
+        "choices",
+        "correctIndex",
+        "explanation"
+      ]
+    },
+    "LearningRecord": {
+      "title": "LearningRecord",
+      "description": "Student learning record for AI literacy descriptive feedback",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the student who owns this record"
+        },
+        "activityId": {
+          "type": "string",
+          "description": "Activity identifier, e.g. ai-literacy-01"
+        },
+        "question": {
+          "type": "string",
+          "description": "The question prompt"
+        },
+        "studentAnswer": {
+          "type": "string",
+          "description": "Student written answer"
+        },
+        "feedbackDraft": {
+          "type": "object",
+          "description": "AI feedback draft object with 3 parts"
+        },
+        "guidelineVersion": {
+          "type": "string",
+          "description": "Guideline version, e.g. v1"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": [
+        "ownerId",
+        "activityId",
+        "question",
+        "studentAnswer",
+        "feedbackDraft",
+        "guidelineVersion",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/questions/{questionId}": {
+      "schema": "QuizQuestion",
+      "description": "Educational quiz questions readable by all students"
+    },
+    "/learningRecords/{recordId}": {
+      "schema": "LearningRecord",
+      "description": "Student learning records owned and accessible only by the creator"
+    }
+  }
+}

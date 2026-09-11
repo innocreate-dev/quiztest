@@ -1,0 +1,6 @@
+{
+  "name": "인공지능, 얼마나 알고 있나요?",
+  "description": "초등학교 5~6학년 학생이 인공지능의 특징, 학습 데이터의 역할, 인공지능 활용 태도를 확인하는 3문항 퀴즈 웹앱",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
